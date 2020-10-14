@@ -63,7 +63,7 @@ class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<Mutabl
 
     private fun updateEnergyAll() {
         for (y in this.indices) {
-            for (x in this.indices) {
+            for (x in this[0].indices) {
                 this[y][x].energy = getEnergy(x, y)
             }
         }
