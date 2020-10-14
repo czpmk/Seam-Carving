@@ -61,11 +61,55 @@ class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<Mutabl
         return sqrt((xGradient + yGradient).toDouble())
     }
 
+    /** Updates energy of all elements of the graph*/
     private fun updateEnergyAll() {
         for (y in this.indices) {
             for (x in this[0].indices) {
                 this[y][x].energy = getEnergy(x, y)
             }
         }
+    }
+
+    fun markSeam(seam: MutableList<Coordinates>) {
+        for (element in seam) {
+            this[element.y][element.x] = Pixel(Color(255, 0, 0).rgb)
+        }
+    }
+
+    /** Removes seam and updates  neighbouring elements' energies */
+    fun removeSeam(seam: MutableList<Coordinates>) {
+        for (element in seam) {
+            this[element.y].removeAt(element.x)
+        }
+        for (element in seam) {
+            for (x in (element.x - 2)..(element.y + 1)) {
+                this[element.y][x].energy = getEnergy(x, element.y)
+            }
+        }
+    }
+
+    fun transpose() {
+        val newGraph = mutableListOf<MutableList<Pixel>>()
+        for (x in 0 until width) {
+            val newRow = mutableListOf<Pixel>()
+            for (y in 0 until height) {
+                newRow.add(this[y][x])
+            }
+            newGraph.add(newRow)
+        }
+        this.clear()
+        for (i in newGraph.indices) {
+            this.add(newGraph[i])
+        }
+    }
+
+    fun toBufferedImage(): BufferedImage {
+        val newImage = BufferedImage(this.width, this.height, BufferedImage.TYPE_INT_RGB)
+        for (y in this.indices) {
+            for (x in this[0].indices) {
+                newImage.setRGB(x, y, this[y][x].rgb)
+            }
+        }
+        return newImage
     }
 }
