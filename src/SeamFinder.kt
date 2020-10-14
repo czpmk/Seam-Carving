@@ -1,65 +1,57 @@
-import java.lang.Exception
+import kotlin.math.absoluteValue
 
 class SeamFinder(private var graph: EnergyGraph) {
+    private var visitedVertices = mutableMapOf<Int, Vertex>()
     private var queue = Queue()
 
+    private fun getHashOf(x: Int, y: Int): Int {
+        return (y shl 20) + x
+    }
+
     private fun addFirstRow() {
-        var newElement: Element
-        for (i in graph[0].indices) {
-            newElement = Element(graph[0][i], i, 0)
-            newElement.energySum = newElement.pixel.energy
+        for (x in graph[0].indices) {
+            val newElement = Vertex(graph, x, 0)
+            newElement.energySum = newElement.energy
+            visitedVertices[newElement.hashCode()] = newElement
             queue.add(newElement)
         }
     }
 
-    private fun getChildren(predecessor: Element): MutableList<Element> {
-        val x = predecessor.x
-        val y = predecessor.y
-        val children = mutableListOf<Element>()
-        var child: Element
-        for (i in (x - 1)..(x + 1)) {
+    private fun getChildren(vertex: Vertex): MutableList<Vertex> {
+        val x = vertex.x
+        val y = vertex.y
+        val children = mutableListOf<Vertex>()
+        var child: Vertex
+        for (i in (-1)..1) {
             try {
-                child = Element(graph[y + 1][x + i], x + i, y + 1)
+                child = visitedVertices[getHashOf(x + i, y + 1)] ?: Vertex(graph, x + i, y + 1)
+                children.add(child)
             } catch (e: IndexOutOfBoundsException) {
                 continue
             }
-            children.add(child)
         }
         return children
     }
 
-    private fun addChildrenToQueue(predecessor: Element) {
+    private fun enqueueChildren(predecessor: Vertex) {
         val children = getChildren(predecessor)
         for (child in children) {
-            if (child.predecessor == null || predecessor.energySum + child.pixel.energy < child.energySum) {
-                child.energySum = predecessor.energySum + child.pixel.energy
+            if (child.predecessor == null || child.energy + predecessor.energySum < child.energySum) {
+                child.energySum = child.energy + predecessor.energySum
                 child.predecessor = predecessor
-                queue.add(child)
             }
+            queue.add(child)
+            visitedVertices[child.hashCode()] = child
         }
     }
 
-    private fun getSeamLastElement(): Element {
-        var minElement: Element
-        while (queue.isNotEmpty()) {
-            minElement = queue.extractMin()
-            if (minElement.y == graph.lastIndex) {
-                return minElement
-            }
-            addChildrenToQueue(minElement)
-        }
-        throw Exception("No seam element found")
-    }
-
-    fun getSeam(): MutableList<Coordinates> {
+    fun energySumMap() {
         addFirstRow()
-        val seamList = mutableListOf<Coordinates>()
-        var lastElement: Element = getSeamLastElement()
-        while (true) {
-            seamList.add(Coordinates(lastElement.x, lastElement.y))
-            println(seamList.last().x.toString() + " " + seamList.last().y)
-            lastElement = lastElement.predecessor ?: break
+        var minVertex: Vertex
+        while (queue.isNotEmpty()) {
+            minVertex = queue.extractMin()
+            if (minVertex.y == graph.lastIndex) break
+            enqueueChildren(minVertex)
         }
-        return seamList
     }
 }
