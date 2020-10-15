@@ -1,6 +1,8 @@
-import kotlin.math.absoluteValue
+import java.awt.image.BufferedImage
+import java.lang.Exception
 
-class SeamFinder(private var graph: EnergyGraph) {
+class SeamFinder(inputImage: BufferedImage) {
+    private var graph: EnergyGraph = EnergyGraph(inputImage)
     private var visitedVertices = mutableMapOf<Int, Vertex>()
     private var queue = Queue()
 
@@ -45,13 +47,43 @@ class SeamFinder(private var graph: EnergyGraph) {
         }
     }
 
-    fun energySumMap() {
-        addFirstRow()
+    private fun getLowestEnergySumVertex(): Vertex? {
         var minVertex: Vertex
         while (queue.isNotEmpty()) {
             minVertex = queue.extractMin()
-            if (minVertex.y == graph.lastIndex) break
+            if (minVertex.y == graph.lastIndex) return minVertex
             enqueueChildren(minVertex)
         }
+        return null
+    }
+
+    private fun getSeam(): MutableList<Coordinates> {
+        var vertex = getLowestEnergySumVertex() ?: throw Exception("No lowest EnergySum found")
+        val seam = mutableListOf<Coordinates>()
+        while (true) {
+            seam.add(Coordinates(vertex.x, vertex.y))
+            vertex = vertex.predecessor ?: break
+        }
+        return seam
+    }
+
+    fun reduceSize(seamNumberV: Int, seamNumberH: Int): BufferedImage {
+        repeat(seamNumberV) {
+            addFirstRow()
+            graph.removeSeam(getSeam())
+            visitedVertices.clear()
+            queue.clear()
+        }
+        if (seamNumberH != 0) {
+            graph.transpose()
+            repeat(seamNumberH) {
+                addFirstRow()
+                graph.removeSeam(getSeam())
+                visitedVertices.clear()
+                queue.clear()
+            }
+            graph.transpose()
+        }
+        return graph.toBufferedImage()
     }
 }

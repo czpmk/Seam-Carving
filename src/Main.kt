@@ -2,7 +2,7 @@ import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
 
-const val inputPath = "/home/mc/IntelliJProjects/Seam-Carving/source_images/small.png"
+const val inputPath = "/home/mc/IntelliJProjects/Seam-Carving/source_images/trees.png"
 const val outputPath = "output_images/trees-out.png"
 var inputFile = File(inputPath)
 var outputFile = File(outputPath)
@@ -17,11 +17,8 @@ fun saveImage(image: BufferedImage) {
 
 fun pipeline() {
     val inputImage: BufferedImage = loadImage()
-    val energyGraph = EnergyGraph(inputImage)
-    val seamFinder = SeamFinder(energyGraph)
-    energyGraph.markSeam(seamFinder.getSeam())
-    energyGraph.toBufferedImage()
-    val outputImage = energyGraph.toBufferedImage()
+    val seamFinder = SeamFinder(inputImage)
+    val outputImage = seamFinder.reduceSize(1, 0)
     saveImage(outputImage)
 }
 
