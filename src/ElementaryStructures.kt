@@ -17,9 +17,11 @@ class Vertex(private val graph: EnergyGraph, val x: Int, val y: Int) {
     override fun hashCode(): Int {
         return (y shl 20) + x
     }
+
     init {
         graph[y][x]
     }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
