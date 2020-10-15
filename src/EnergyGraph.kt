@@ -1,5 +1,6 @@
 import java.awt.Color
 import java.awt.image.BufferedImage
+import kotlin.IndexOutOfBoundsException
 import kotlin.math.sqrt
 
 class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<MutableList<Pixel>> by mutableListOf() {
@@ -70,6 +71,18 @@ class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<Mutabl
         }
     }
 
+    private fun updateEnergySeam(seam: MutableList<Coordinates>) {
+        for (element in seam) {
+            for (x in (element.x - 2)..(element.y + 1)) {
+                try {
+                    this[element.y][x].energy = getEnergy(x, element.y)
+                } catch (e: IndexOutOfBoundsException) {
+                    continue
+                }
+            }
+        }
+    }
+
     fun markSeam(seam: MutableList<Coordinates>) {
         for (element in seam) {
             this[element.y][element.x] = Pixel(Color(255, 0, 0).rgb)
@@ -81,11 +94,7 @@ class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<Mutabl
         for (element in seam) {
             this[element.y].removeAt(element.x)
         }
-        for (element in seam) {
-            for (x in (element.x - 2)..(element.y + 1)) {
-                this[element.y][x].energy = getEnergy(x, element.y)
-            }
-        }
+        updateEnergySeam(seam)
     }
 
     fun transpose() {
