@@ -2,88 +2,90 @@ import java.awt.image.BufferedImage
 import java.lang.Exception
 
 class SeamFinder(inputImage: BufferedImage) {
-    private var graph: EnergyGraph = EnergyGraph(inputImage)
-    private var visitedVertices = mutableMapOf<Int, Vertex>()
+    private var energyGraph: EnergyGraph = EnergyGraph(inputImage)
+    private lateinit var vertices: Array<Array<Vertex?>>
     private var queue = Queue()
 
-    private fun getHashOf(x: Int, y: Int): Int {
-        return (y shl 20) + x
+    private fun newVerticesGraph() {
+        vertices = Array(energyGraph.height) { Array(energyGraph.width) { null } }
     }
 
     private fun addFirstRow() {
-        for (x in graph[0].indices) {
-            val newElement = Vertex(graph, x, 0)
-            newElement.energySum = newElement.energy
-            visitedVertices[newElement.hashCode()] = newElement
-            queue.add(newElement)
+        for (x in energyGraph[0].indices) {
+            val y = 0
+            vertices[y][x] = Vertex(energyGraph, x, y, energyGraph[y][x].energy)
+            queue.put(vertices[y][x] ?: throw Exception("Can not add null to Queue"))
         }
     }
 
-    private fun getChildren(vertex: Vertex): MutableList<Vertex> {
-        val x = vertex.x
-        val y = vertex.y
-        val children = mutableListOf<Vertex>()
-        var child: Vertex
-        for (i in (-1)..1) {
+    private fun enqueueChildren(predecessor: Vertex) {
+        val y = predecessor.y + 1
+        for (x in (predecessor.x - 1)..(predecessor.x + 1)) {
             try {
-                child = visitedVertices[getHashOf(x + i, y + 1)] ?: Vertex(graph, x + i, y + 1)
-                children.add(child)
+                when {
+                    // uninitialized child
+                    vertices[y][x] == null -> {
+                        vertices[y][x] = Vertex(energyGraph, x, y, predecessor.energySum + energyGraph[y][x].energy)
+                        vertices[y][x]!!.predecessor = predecessor
+                    }
+                    // energySum can be updated
+                    vertices[y][x]!!.energy + predecessor.energySum < vertices[y][x]!!.energySum -> {
+                        vertices[y][x]!!.energySum = vertices[y][x]!!.energy + predecessor.energySum
+                        vertices[y][x]!!.predecessor = predecessor
+                    }
+                    // nothing was changed, do not enqueue
+                    else -> continue
+                }
+                queue.put(vertices[y][x] ?: throw Exception("Vertex expected, found null"))
             } catch (e: IndexOutOfBoundsException) {
                 continue
             }
         }
-        return children
     }
 
-    private fun enqueueChildren(predecessor: Vertex) {
-        val children = getChildren(predecessor)
-        for (child in children) {
-            if (child.predecessor == null || child.energy + predecessor.energySum < child.energySum) {
-                child.energySum = child.energy + predecessor.energySum
-                child.predecessor = predecessor
-            }
-            queue.add(child)
-            visitedVertices[child.hashCode()] = child
-        }
-    }
-
-    private fun getLowestEnergySumVertex(): Vertex? {
+    private fun getLowestSum(): Vertex {
         var minVertex: Vertex
         while (queue.isNotEmpty()) {
             minVertex = queue.extractMin()
-            if (minVertex.y == graph.lastIndex) return minVertex
-            enqueueChildren(minVertex)
+            if (minVertex.y == energyGraph.lastIndex) {
+                return minVertex
+            } else {
+                enqueueChildren(minVertex)
+            }
         }
-        return null
+        throw Exception("No min vertex found")
     }
 
     private fun getSeam(): MutableList<Coordinates> {
-        var vertex = getLowestEnergySumVertex() ?: throw Exception("No lowest EnergySum found")
+        var vertex = getLowestSum()
         val seam = mutableListOf<Coordinates>()
-        while (true) {
+        seam.add(Coordinates(vertex.x, vertex.y))
+        while (vertex.predecessor != null) {
+            vertex = vertex.predecessor!!
             seam.add(Coordinates(vertex.x, vertex.y))
-            vertex = vertex.predecessor ?: break
         }
         return seam
     }
 
-    fun reduceSize(seamNumberV: Int, seamNumberH: Int): BufferedImage {
-        repeat(seamNumberV) {
+    fun removeLines(vertical: Int, horizontal: Int): BufferedImage {
+        repeat(vertical) {
+            newVerticesGraph()
             addFirstRow()
-            graph.removeSeam(getSeam())
-            visitedVertices.clear()
+            energyGraph.removeSeam(getSeam())
             queue.clear()
+            println(it)
         }
-        if (seamNumberH != 0) {
-            graph.transpose()
-            repeat(seamNumberH) {
+        if (horizontal > 0) {
+            energyGraph.transpose()
+            repeat(horizontal) {
+                newVerticesGraph()
                 addFirstRow()
-                graph.removeSeam(getSeam())
-                visitedVertices.clear()
+                energyGraph.removeSeam(getSeam())
                 queue.clear()
+                println(it)
             }
-            graph.transpose()
+            energyGraph.transpose()
         }
-        return graph.toBufferedImage()
+        return energyGraph.toBufferedImage()
     }
 }
