@@ -1,9 +1,10 @@
 import java.awt.Color
 import java.awt.image.BufferedImage
+import kotlin.IndexOutOfBoundsException
 import kotlin.math.sqrt
 
 class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<MutableList<Pixel>> by mutableListOf() {
-    private val height: Int
+    val height: Int
         get() {
             return try {
                 this.size
@@ -11,7 +12,7 @@ class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<Mutabl
                 0
             }
         }
-    private val width: Int
+    val width: Int
         get() {
             return try {
                 this[0].size
@@ -61,11 +62,63 @@ class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<Mutabl
         return sqrt((xGradient + yGradient).toDouble())
     }
 
+    /** Updates energy of all elements of the graph*/
     private fun updateEnergyAll() {
         for (y in this.indices) {
-            for (x in this.indices) {
+            for (x in this[y].indices) {
                 this[y][x].energy = getEnergy(x, y)
             }
         }
+    }
+
+    private fun updateEnergySeam(seam: MutableList<Coordinates>) {
+        for (vertex in seam) {
+            for (x in (vertex.x - 2)..(vertex.x + 1)) {
+                try {
+                    this[vertex.y][x].energy = getEnergy(x, vertex.y)
+                } catch (e: IndexOutOfBoundsException) {
+                    continue
+                }
+            }
+        }
+    }
+
+//    fun markSeam(seam: MutableList<Coordinates>) {
+//        for (vertex in seam) {
+//            this[vertex.y][vertex.x] = Pixel(Color(255, 0, 0).rgb)
+//        }
+//    }
+
+    /** Removes seam and updates  neighbouring elements' energies */
+    fun removeSeam(seam: MutableList<Coordinates>) {
+        for (vertex in seam) {
+            this[vertex.y].removeAt(vertex.x)
+        }
+        updateEnergySeam(seam)
+    }
+
+    fun transpose() {
+        val newGraph = mutableListOf<MutableList<Pixel>>()
+        for (x in 0 until width) {
+            val newRow = mutableListOf<Pixel>()
+            for (y in 0 until height) {
+                newRow.add(this[y][x])
+            }
+            newGraph.add(newRow)
+        }
+        this.clear()
+        for (i in newGraph.indices) {
+            this.add(newGraph[i])
+        }
+    }
+
+    fun toBufferedImage(): BufferedImage {
+        val newImage = BufferedImage(this.width, this.height, BufferedImage.TYPE_INT_RGB)
+        for (y in this.indices) {
+            for (x in this[0].indices) {
+                newImage.setRGB(x, y, this[y][x].rgb)
+            }
+        }
+        return newImage
     }
 }

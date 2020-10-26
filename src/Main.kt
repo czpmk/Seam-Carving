@@ -1,9 +1,10 @@
 import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
+import kotlin.time.measureTime
 
-const val inputPath = "/home/mc/IntelliJProjects/Seam-Carving/source_images/pexels-bri-schneiter-346529.png"
-const val outputPath = "output_images/pexels-bri-schneiter-346529-shrunk.png"
+const val inputPath = "/home/mc/IntelliJProjects/Seam-Carving/source_images/blue.png"
+const val outputPath = "output_images/trees-out.png"
 var inputFile = File(inputPath)
 var outputFile = File(outputPath)
 
@@ -17,9 +18,12 @@ fun saveImage(image: BufferedImage) {
 
 fun pipeline() {
     val inputImage: BufferedImage = loadImage()
-    saveImage(inputImage)
+    val seamFinder = SeamFinder(inputImage)
+    val outputImage = seamFinder.removeLines(150, 50)
+    saveImage(outputImage)
 }
 
 fun main() {
-    pipeline()
+    val time = measureTime { pipeline() }
+    println(time)
 }
