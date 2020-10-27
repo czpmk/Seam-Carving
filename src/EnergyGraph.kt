@@ -1,5 +1,6 @@
 import java.awt.Color
 import java.awt.image.BufferedImage
+import java.lang.Exception
 import kotlin.IndexOutOfBoundsException
 import kotlin.math.sqrt
 
@@ -83,12 +84,6 @@ class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<Mutabl
         }
     }
 
-//    fun markSeam(seam: MutableList<Coordinates>) {
-//        for (vertex in seam) {
-//            this[vertex.y][vertex.x] = Pixel(Color(255, 0, 0).rgb)
-//        }
-//    }
-
     /** Removes seam and updates  neighbouring elements' energies */
     fun removeSeam(seam: MutableList<Coordinates>) {
         for (vertex in seam) {
@@ -117,6 +112,26 @@ class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<Mutabl
         for (y in this.indices) {
             for (x in this[0].indices) {
                 newImage.setRGB(x, y, this[y][x].rgb)
+            }
+        }
+        return newImage
+    }
+
+    fun sumToBufferedImage(): BufferedImage {
+        val newImage = BufferedImage(this.width, this.height, BufferedImage.TYPE_INT_RGB)
+        var maxEnergy = -20.0
+        for (y in this.indices) {
+            val energy: Double = this[y].maxByOrNull { it.energySum }?.energySum ?: throw Exception("eee1")
+            if (energy > maxEnergy) maxEnergy = energy
+        }
+        val newColor = { energy: Double -> ((energy / maxEnergy) * 255).toInt() }
+        val colorOf = { pixel: Pixel ->
+            val col = newColor(pixel.energySum)
+            Color(col, col, col).rgb
+        }
+        for (y in this.indices) {
+            for (x in this[0].indices) {
+                newImage.setRGB(x, y, colorOf(this[y][x]))
             }
         }
         return newImage
