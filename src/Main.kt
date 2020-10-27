@@ -20,6 +20,7 @@ fun pipeline() {
     val inputImage: BufferedImage = loadImage()
     val seamFinder = SeamFinder(inputImage)
     val outputImage = seamFinder.removeLines(150, 50)
+//    val outputImage = seamFinder.showEnergy()
     saveImage(outputImage)
 }
 
