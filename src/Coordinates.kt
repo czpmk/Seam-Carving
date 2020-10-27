@@ -1,1 +1,1 @@
-class Coordinates(val x: Int, val y: Int)
+class Coordinates(var x: Int, var y: Int)
