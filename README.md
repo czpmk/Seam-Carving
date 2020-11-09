@@ -3,6 +3,7 @@ Project created as an introduction to Kotlin.
 - created by: Michał Czapiewski
 - email: czapiewskimk@gmail.com
 - Github: https://github.com/czpmk
+
 The program is an image resizing algorithm implementation, based on the Seam Carving 
 algorithm. To find seams the program calculates the energy of pixels and searches the
 path of pixels with the lowest sum of energy possible. Keeping in mind a possible 
