@@ -4,11 +4,12 @@ Project created as an introduction to Kotlin.
 - email: czapiewskimk@gmail.com
 - Github: https://github.com/czpmk
 The program is an image resizing algorithm implementation, based on the Seam Carving 
-algorithm. To find seams the program calculates the energy of pixels and searches the 
+algorithm. To find seams the program calculates the energy of pixels and searches the
 path of pixels with the lowest sum of energy possible. Keeping in mind a possible 
 mobile application the most effort is put into efficiency and versatility. 
 ---
 # Efficiency measure
+
 As a measure of efficiency, each version of the algorithm is tested by recording 
 time necessary to remove 150 vertical and 50 horizontal seams of 4 images:
 500x300, 600x400, 1920x1200 and 3000x2000 pixels. 
