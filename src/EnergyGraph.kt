@@ -2,9 +2,8 @@ import java.awt.Color
 import java.awt.image.BufferedImage
 import java.lang.Exception
 import kotlin.IndexOutOfBoundsException
-import kotlin.math.sqrt
 
-class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<MutableList<Pixel>> by mutableListOf() {
+class EnergyGraph(private val bufferedImage: BufferedImage, kernelType: String) : MutableList<MutableList<Pixel>> by mutableListOf() {
     val height: Int
         get() {
             return try {
@@ -21,10 +20,11 @@ class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<Mutabl
                 0
             }
         }
+    private val blurKernel = Kernel(this, "gaussian")
+    private val energyKernel = Kernel(this, kernelType)
 
     init {
         createEnergyGraph()
-        updateEnergyAll()
     }
 
     /** Copies colors of every pixel in an BufferedImage to EnergyGraph */
@@ -38,36 +38,20 @@ class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<Mutabl
         }
     }
 
-    private fun getGradient(color1: Color, color2: Color): Int {
-        val red = (color1.red - color2.red)
-        val green = (color1.green - color2.green)
-        val blue = (color1.blue - color2.blue)
-        return red * red + green * green + blue * blue
-    }
-
-    /** Returns coordinates, prevents OutOfBounds exception */
-    private fun getCoordinates(coordinate: Int, maxValue: Int): Pair<Int, Int> {
-        return when (coordinate) {
-            0 -> Pair(0, 2)
-            maxValue - 1 -> Pair(maxValue - 3, maxValue - 1)
-            else -> Pair(coordinate - 1, coordinate + 1)
+    /** Blur the picture*/
+    fun blurGreyValues() {
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                blurKernel.applyTo(x, y)
+            }
         }
     }
 
-    /** Returns energy of a single pixel */
-    private fun getEnergy(x: Int, y: Int): Double {
-        val (x1, x2) = getCoordinates(x, width)
-        val (y1, y2) = getCoordinates(y, height)
-        val xGradient = getGradient(this[y][x1], this[y][x2])
-        val yGradient = getGradient(this[y1][x], this[y2][x])
-        return sqrt((xGradient + yGradient).toDouble())
-    }
-
     /** Updates energy of all elements of the graph*/
-    private fun updateEnergyAll() {
+    fun updateEnergyAll() {
         for (y in this.indices) {
             for (x in this[y].indices) {
-                this[y][x].energy = getEnergy(x, y)
+                energyKernel.applyTo(x, y)
             }
         }
     }
@@ -76,7 +60,7 @@ class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<Mutabl
         for (vertex in seam) {
             for (x in (vertex.x - 2)..(vertex.x + 1)) {
                 try {
-                    this[vertex.y][x].energy = getEnergy(x, vertex.y)
+                    energyKernel.applyTo(x, vertex.y)
                 } catch (e: IndexOutOfBoundsException) {
                     continue
                 }
