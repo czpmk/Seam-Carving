@@ -101,6 +101,26 @@ class EnergyGraph(private val bufferedImage: BufferedImage, kernelType: String) 
         return newImage
     }
 
+    fun energyToBufferedImage(): BufferedImage {
+        val newImage = BufferedImage(this.width, this.height, BufferedImage.TYPE_INT_RGB)
+        var maxEnergy = -20.0
+        for (y in this.indices) {
+            val energy: Double = this[y].maxByOrNull { it.energy }?.energy ?: throw Exception("eee1")
+            if (energy > maxEnergy) maxEnergy = energy
+        }
+        val newColor = { energy: Double -> ((energy / maxEnergy) * 255).toInt() }
+        val colorOf = { pixel: Pixel ->
+            val col = newColor(pixel.energy)
+            Color(col, col, col).rgb
+        }
+        for (y in this.indices) {
+            for (x in this[0].indices) {
+                newImage.setRGB(x, y, colorOf(this[y][x]))
+            }
+        }
+        return newImage
+    }
+
     fun sumToBufferedImage(): BufferedImage {
         val newImage = BufferedImage(this.width, this.height, BufferedImage.TYPE_INT_RGB)
         var maxEnergy = -20.0
@@ -116,6 +136,16 @@ class EnergyGraph(private val bufferedImage: BufferedImage, kernelType: String) 
         for (y in this.indices) {
             for (x in this[0].indices) {
                 newImage.setRGB(x, y, colorOf(this[y][x]))
+            }
+        }
+        return newImage
+    }
+
+    fun grayToBufferedImage(): BufferedImage {
+        val newImage = BufferedImage(this.width, this.height, BufferedImage.TYPE_BYTE_GRAY)
+        for (y in this.indices) {
+            for (x in this[0].indices) {
+                newImage.setRGB(x, y, this[y][x].grayColor())
             }
         }
         return newImage
