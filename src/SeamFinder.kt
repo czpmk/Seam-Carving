@@ -3,8 +3,7 @@ import java.awt.image.BufferedImage
 fun <T> List<T>.safeSubList(fromIndex: Int, toIndex: Int): List<T> =
         this.subList(fromIndex.coerceAtLeast(0), toIndex.coerceAtMost(this.size))
 
-class SeamFinder(inputImage: BufferedImage) {
-    private var energyGraph: EnergyGraph = EnergyGraph(inputImage)
+class SeamFinder(private val energyGraph: EnergyGraph) {
 
     private fun updateFirstRow() {
         val y = 0
@@ -78,6 +77,16 @@ class SeamFinder(inputImage: BufferedImage) {
     fun showEnergy(): BufferedImage {
         updateFirstRow()
         updateEnergySums()
+        return energyGraph.energyToBufferedImage()
+    }
+
+    fun showSum(): BufferedImage {
+        updateFirstRow()
+        updateEnergySums()
         return energyGraph.sumToBufferedImage()
+    }
+
+    fun showGrayScale(): BufferedImage {
+        return energyGraph.grayToBufferedImage()
     }
 }
