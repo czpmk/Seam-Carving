@@ -2,9 +2,10 @@ import java.awt.Color
 import java.awt.image.BufferedImage
 import java.lang.Exception
 import kotlin.IndexOutOfBoundsException
-import kotlin.math.sqrt
 
-class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<MutableList<Pixel>> by mutableListOf() {
+/** EnergyGraph is a mutable list of Pixel class objects. It's optimized for
+ * Seam Carving, allows for pixel transformation using filters based on Kernel objects */
+class EnergyGraph(private val bufferedImage: BufferedImage, kernelType: String) : MutableList<MutableList<Pixel>> by mutableListOf() {
     val height: Int
         get() {
             return try {
@@ -21,10 +22,11 @@ class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<Mutabl
                 0
             }
         }
+    private val blurKernel = Kernel(this, "gaussian")
+    private val energyKernel = Kernel(this, kernelType)
 
     init {
         createEnergyGraph()
-        updateEnergyAll()
     }
 
     /** Copies colors of every pixel in an BufferedImage to EnergyGraph */
@@ -38,45 +40,31 @@ class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<Mutabl
         }
     }
 
-    private fun getGradient(color1: Color, color2: Color): Int {
-        val red = (color1.red - color2.red)
-        val green = (color1.green - color2.green)
-        val blue = (color1.blue - color2.blue)
-        return red * red + green * green + blue * blue
-    }
-
-    /** Returns coordinates, prevents OutOfBounds exception */
-    private fun getCoordinates(coordinate: Int, maxValue: Int): Pair<Int, Int> {
-        return when (coordinate) {
-            0 -> Pair(0, 2)
-            maxValue - 1 -> Pair(maxValue - 3, maxValue - 1)
-            else -> Pair(coordinate - 1, coordinate + 1)
-        }
-    }
-
-    /** Returns energy of a single pixel */
-    private fun getEnergy(x: Int, y: Int): Double {
-        val (x1, x2) = getCoordinates(x, width)
-        val (y1, y2) = getCoordinates(y, height)
-        val xGradient = getGradient(this[y][x1], this[y][x2])
-        val yGradient = getGradient(this[y1][x], this[y2][x])
-        return sqrt((xGradient + yGradient).toDouble())
-    }
-
-    /** Updates energy of all elements of the graph*/
-    private fun updateEnergyAll() {
-        for (y in this.indices) {
-            for (x in this[y].indices) {
-                this[y][x].energy = getEnergy(x, y)
+    /** Blurs the picture (gray field of a pixels) using Gaussian Blur */
+    fun blurGreyValues() {
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                blurKernel.applyTo(x, y)
             }
         }
     }
 
+    /** Updates energies of all elements of the graph */
+    fun updateEnergyAll() {
+        for (y in this.indices) {
+            for (x in this[y].indices) {
+                energyKernel.applyTo(x, y)
+            }
+        }
+    }
+
+    /** Updates energies of 4 pixel wide stripe of EnergyGraph based on 'seam' argument,
+     * to only update pixels that can possibly be altered */
     private fun updateEnergySeam(seam: MutableList<Coordinates>) {
         for (vertex in seam) {
             for (x in (vertex.x - 2)..(vertex.x + 1)) {
                 try {
-                    this[vertex.y][x].energy = getEnergy(x, vertex.y)
+                    energyKernel.applyTo(x, vertex.y)
                 } catch (e: IndexOutOfBoundsException) {
                     continue
                 }
@@ -92,6 +80,7 @@ class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<Mutabl
         updateEnergySeam(seam)
     }
 
+    /** Transposes EnergyGraph, allows algorithm application in horizontal direction */
     fun transpose() {
         val newGraph = mutableListOf<MutableList<Pixel>>()
         for (x in 0 until width) {
@@ -107,6 +96,7 @@ class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<Mutabl
         }
     }
 
+    /** Converts EnergyGraph to BufferedImage. Returns BufferedImage */
     fun toBufferedImage(): BufferedImage {
         val newImage = BufferedImage(this.width, this.height, BufferedImage.TYPE_INT_RGB)
         for (y in this.indices) {
@@ -117,6 +107,30 @@ class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<Mutabl
         return newImage
     }
 
+    /** Converts EnergyGraph to BufferedImage based on Pixels' 'energy' field,
+     * normalized to gray scale. Returns BufferedImage */
+    fun energyToBufferedImage(): BufferedImage {
+        val newImage = BufferedImage(this.width, this.height, BufferedImage.TYPE_INT_RGB)
+        var maxEnergy = -20.0
+        for (y in this.indices) {
+            val energy: Double = this[y].maxByOrNull { it.energy }?.energy ?: throw Exception("eee1")
+            if (energy > maxEnergy) maxEnergy = energy
+        }
+        val newColor = { energy: Double -> ((energy / maxEnergy) * 255).toInt() }
+        val colorOf = { pixel: Pixel ->
+            val col = newColor(pixel.energy)
+            Color(col, col, col).rgb
+        }
+        for (y in this.indices) {
+            for (x in this[0].indices) {
+                newImage.setRGB(x, y, colorOf(this[y][x]))
+            }
+        }
+        return newImage
+    }
+
+    /** Converts EnergyGraph to BufferedImage based on Pixels' 'energySum' field,
+     * normalized to gray scale. Returns BufferedImage */
     fun sumToBufferedImage(): BufferedImage {
         val newImage = BufferedImage(this.width, this.height, BufferedImage.TYPE_INT_RGB)
         var maxEnergy = -20.0
@@ -132,6 +146,18 @@ class EnergyGraph(private val bufferedImage: BufferedImage) : MutableList<Mutabl
         for (y in this.indices) {
             for (x in this[0].indices) {
                 newImage.setRGB(x, y, colorOf(this[y][x]))
+            }
+        }
+        return newImage
+    }
+
+    /** Converts EnergyGraph to BufferedImage based on Pixels' 'gray' field,
+     * normalized to gray scale. Returns BufferedImage */
+    fun grayToBufferedImage(): BufferedImage {
+        val newImage = BufferedImage(this.width, this.height, BufferedImage.TYPE_BYTE_GRAY)
+        for (y in this.indices) {
+            for (x in this[0].indices) {
+                newImage.setRGB(x, y, this[y][x].grayColor())
             }
         }
         return newImage
