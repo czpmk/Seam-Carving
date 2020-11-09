@@ -24,10 +24,10 @@ of energy.
 - Supported formats: .BMP
 - Efficiency (150/50 [V/H] seams removal): 
 [resolution: time (previous result)]
-* 500 x 300: 3.71s (1m 9s)
-* 600 x 400: 5.45s (2m 28s)
-* 1920 x 1200: 45.10s (13m 52s)
-* 3000 x 2000: 3m 18.00s (not recorded)
+  * 500 x 300: 3.71s (1m 9s)
+  * 600 x 400: 5.45s (2m 28s)
+  * 1920 x 1200: 45.10s (13m 52s)
+  * 3000 x 2000: 3m 18.00s (not recorded)
 - Gaussian blur - implemented to reduce the graininess of the images.
 - Conversion to grayscale - image is being converted to grayscale before calculating
 the energies.
