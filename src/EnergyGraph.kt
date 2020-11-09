@@ -3,6 +3,8 @@ import java.awt.image.BufferedImage
 import java.lang.Exception
 import kotlin.IndexOutOfBoundsException
 
+/** EnergyGraph is a mutable list of Pixel class objects. It's optimized for
+ * Seam Carving, allows for pixel transformation using filters based on Kernel objects */
 class EnergyGraph(private val bufferedImage: BufferedImage, kernelType: String) : MutableList<MutableList<Pixel>> by mutableListOf() {
     val height: Int
         get() {
@@ -38,7 +40,7 @@ class EnergyGraph(private val bufferedImage: BufferedImage, kernelType: String) 
         }
     }
 
-    /** Blur the picture*/
+    /** Blurs the picture (gray field of a pixels) using Gaussian Blur */
     fun blurGreyValues() {
         for (y in 0 until height) {
             for (x in 0 until width) {
@@ -47,7 +49,7 @@ class EnergyGraph(private val bufferedImage: BufferedImage, kernelType: String) 
         }
     }
 
-    /** Updates energy of all elements of the graph*/
+    /** Updates energies of all elements of the graph */
     fun updateEnergyAll() {
         for (y in this.indices) {
             for (x in this[y].indices) {
@@ -56,6 +58,8 @@ class EnergyGraph(private val bufferedImage: BufferedImage, kernelType: String) 
         }
     }
 
+    /** Updates energies of 4 pixel wide stripe of EnergyGraph based on 'seam' argument,
+     * to only update pixels that can possibly be altered */
     private fun updateEnergySeam(seam: MutableList<Coordinates>) {
         for (vertex in seam) {
             for (x in (vertex.x - 2)..(vertex.x + 1)) {
@@ -76,6 +80,7 @@ class EnergyGraph(private val bufferedImage: BufferedImage, kernelType: String) 
         updateEnergySeam(seam)
     }
 
+    /** Transposes EnergyGraph, allows algorithm application in horizontal direction */
     fun transpose() {
         val newGraph = mutableListOf<MutableList<Pixel>>()
         for (x in 0 until width) {
@@ -91,6 +96,7 @@ class EnergyGraph(private val bufferedImage: BufferedImage, kernelType: String) 
         }
     }
 
+    /** Converts EnergyGraph to BufferedImage. Returns BufferedImage */
     fun toBufferedImage(): BufferedImage {
         val newImage = BufferedImage(this.width, this.height, BufferedImage.TYPE_INT_RGB)
         for (y in this.indices) {
@@ -101,6 +107,8 @@ class EnergyGraph(private val bufferedImage: BufferedImage, kernelType: String) 
         return newImage
     }
 
+    /** Converts EnergyGraph to BufferedImage based on Pixels' 'energy' field,
+     * normalized to gray scale. Returns BufferedImage */
     fun energyToBufferedImage(): BufferedImage {
         val newImage = BufferedImage(this.width, this.height, BufferedImage.TYPE_INT_RGB)
         var maxEnergy = -20.0
@@ -121,6 +129,8 @@ class EnergyGraph(private val bufferedImage: BufferedImage, kernelType: String) 
         return newImage
     }
 
+    /** Converts EnergyGraph to BufferedImage based on Pixels' 'energySum' field,
+     * normalized to gray scale. Returns BufferedImage */
     fun sumToBufferedImage(): BufferedImage {
         val newImage = BufferedImage(this.width, this.height, BufferedImage.TYPE_INT_RGB)
         var maxEnergy = -20.0
@@ -141,6 +151,8 @@ class EnergyGraph(private val bufferedImage: BufferedImage, kernelType: String) 
         return newImage
     }
 
+    /** Converts EnergyGraph to BufferedImage based on Pixels' 'gray' field,
+     * normalized to gray scale. Returns BufferedImage */
     fun grayToBufferedImage(): BufferedImage {
         val newImage = BufferedImage(this.width, this.height, BufferedImage.TYPE_BYTE_GRAY)
         for (y in this.indices) {

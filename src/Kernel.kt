@@ -2,6 +2,12 @@ import java.lang.Exception
 import kotlin.math.pow
 import kotlin.math.sqrt
 
+/** Kernel class object allows for application of one of predefined kernels,
+ * specified by 'type' argument provided while object is being created.
+ * Available kernels:
+ * 'basic': basic XY gradient;
+ * 'sobel': 3x3 Sobel Filter;
+ * 'gaussian': Gaussian blur; */
 class Kernel(private val eG: EnergyGraph, type: String) {
     private val piX2 = 6.28
     private val e = 2.72
@@ -26,6 +32,8 @@ class Kernel(private val eG: EnergyGraph, type: String) {
     private lateinit var continuousKernel: List<List<Double>>
     var applyTo: (Int, Int) -> Unit
 
+    /** Creates a map of normal distribution based on standard deviation and size;
+     * Mentioned arguments are temporarily predefined values! */
     private fun generateNormalDistributionMap() {
         for (diffY in (-kerSizeBy2)..(kerSizeBy2)) {
             val newRow = mutableListOf<Double>()
@@ -36,6 +44,8 @@ class Kernel(private val eG: EnergyGraph, type: String) {
         }
     }
 
+    /** Returns integer coordinate, increased or decreased by 1 to avoid
+     * IndexOutOfBoundsExceptions */
     private fun fixedCoordinate(coord: Int, maxValue: Int): Int {
         return when (coord) {
             in 1 until maxValue -> coord
@@ -45,6 +55,7 @@ class Kernel(private val eG: EnergyGraph, type: String) {
         }
     }
 
+    /** Applies filter based on one of predefined, directional maps */
     private fun discreteFilter(x: Int, y: Int) {
         val fixedX = fixedCoordinate(x, eG.width - 1)
         val fixedY = fixedCoordinate(y, eG.height - 1)
@@ -66,6 +77,7 @@ class Kernel(private val eG: EnergyGraph, type: String) {
         eG[y][x].energy = sqrt((sumX * sumX + sumY * sumY).toDouble())
     }
 
+    /** Applies filter based on normal distribution */
     private fun continuousFilter(x: Int, y: Int) {
         var sum = 0.0
         for (X in (-kerSizeBy2)..(kerSizeBy2)) {
