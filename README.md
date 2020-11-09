@@ -7,12 +7,14 @@ The program is an image resizing algorithm implementation, based on the Seam Car
 algorithm. To find seams the program calculates the energy of pixels and searches the
 path of pixels with the lowest sum of energy possible. Keeping in mind a possible 
 mobile application the most effort is put into efficiency and versatility. 
+
 ---
 # Efficiency measure
 
 As a measure of efficiency, each version of the algorithm is tested by recording 
 time necessary to remove 150 vertical and 50 horizontal seams of 4 images:
 500x300, 600x400, 1920x1200 and 3000x2000 pixels. 
+
 ---
 # Current state
 - Seam finding algorithm - implemented using a dynamic approach. Sums of 
@@ -33,11 +35,13 @@ the energies.
 various methods of image filtering as well as energy calculation. Basic gradient, 
 Sobel Filters and Gaussian Blur has been implemented using Kernel class.
 
+---
 # In progress
 - Conversion to grayscale via Kernel.
 - Variable parameters for blur Kernel.
 - Efficiency improvement.
 
+---
 # Further development plan
 - Image scaling implementation, to provide seam carving in a reasonable time.
 - Support for different image formats
